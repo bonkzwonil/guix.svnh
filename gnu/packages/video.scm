@@ -1662,6 +1662,39 @@ These tools require a supported graphics chip, driver, and VA-API back end to
 operate properly.")
     (license license:expat)))
 
+(define-public nv-codec-headers
+  (package
+    (name "nv-codec-headers")
+    (version "n12.1.14.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git")
+              (commit "")))
+        (file-name (git-file-name name version))
+        (sha256 (base32 "1759rrv8nbar313wdapx3z5lsjb6rwnsaawlfwvhb4l5daz7gcbx"))))
+    (build-system gnu-build-system)
+	  (arguments
+		  '(#:phases
+		    (modify-phases %standard-phases
+				   (delete 'configure)
+(add-before 'build 'set-prefix-in-makefile
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      ;; Modify the makefile so that its
+                      ;; 'PREFIX' variable points to "out".
+                      (let ((out (assoc-ref outputs "out")))
+                        (substitute* "Makefile"
+                          (("PREFIX =.*")
+                           (string-append "PREFIX = "
+                                          out "\n"))))))
+
+				   (delete 'check))))
+    (home-page "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git")
+    (synopsis "NV codec")
+    (description "yo")
+    (license license:gpl3+)))
+
 (define-public ffmpeg
   (package
     (name "ffmpeg")
@@ -1683,6 +1716,7 @@ operate properly.")
       (list dav1d
             fontconfig
             freetype
+	    nv-codec-headers
             frei0r-plugins
             gnutls
             opus
@@ -1782,6 +1816,7 @@ operate properly.")
          "--enable-gnutls"
          "--enable-ladspa"
          "--enable-libaom"
+	 "--enable-ffnvcodec"
          "--enable-libass"
          "--enable-libbluray"
          "--enable-libcaca"
@@ -3924,7 +3959,7 @@ be used for realtime video capture via Linux-specific APIs.")
       bash-minimal
       curl
       eudev
-      ffmpeg-4
+      ffmpeg-5
       fontconfig
       freetype
       glib
